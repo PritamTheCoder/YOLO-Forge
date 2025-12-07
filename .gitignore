@@ -1,0 +1,7 @@
+tests/
+.venv
+pytest.ini
+requirements-test.txt
+docker
+examples
+configs
