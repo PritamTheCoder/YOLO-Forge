@@ -35,10 +35,10 @@ augment_passes:
           blur_types: ["gaussian", "motion", "median"] 
           blur_prob: 0.85 
           blur_strength_range: [3, 15] 
-          shear_x_range: [-80, 80] 
-          shear_y_range: [-40, 40] 
+          shear_x_range: [-12, 12] 
+          shear_y_range: [-8, 8] 
           motion_blur_prob: 0.6
-          padding_ratio: 0.25  
+          padding_ratio: 0.40  
           bbox_prob: 0.85  
           blend_edges: true
           p: 0.85  
@@ -49,11 +49,11 @@ augment_passes:
     pipeline:
       - transform: "BboxExtremeShearOcclude"
         params:
-          shear_x_range: [-40, 40]  
-          shear_y_range: [-20, 20]  
+          shear_x_range: [-12, 12]  
+          shear_y_range: [-8, 8]  
           brightness_shift: [1.3, 2.2]  
           occlusion_intensity: "medium" 
-          occlusion_prob: 0.8  
+          occlusion_prob: 0.7  
           padding_ratio: 0.5  
           bbox_prob: 0.8  
           p: 0.85  
@@ -92,7 +92,7 @@ augment_passes:
       - transform: "BallBlendAndShapeBiasTransform"
         params:
           shape_warp_prob: 0.7  
-          warp_strength: [0.05, 0.35]  
+          warp_strength: [0.1, 0.35]  
           blend_to_bg_prob: 0.8  
           blend_color_mode: "ball"
           blend_radius_ratio: [0.6, 1.2] 

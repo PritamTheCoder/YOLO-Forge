@@ -5,7 +5,7 @@ dataset:
   output_images_dir: "dataset_aug/images"
   output_labels_dir: "dataset_aug/labels"
   logs_dir: "logs"
-  target_total_images: 100   # 10k originals -> ~33k final
+  target_total_images: 100   # Any number of dataset you want
 
 validation:
   min_visibility: 0.1
