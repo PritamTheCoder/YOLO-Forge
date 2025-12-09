@@ -1,4 +1,4 @@
-# utils_augment.py
+# utils.py
 # Shared utilities for localized effects and smooth blending
 
 import numpy as np

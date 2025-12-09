@@ -4,4 +4,10 @@ pytest.ini
 requirements-test.txt
 docker
 examples
-configs
+__pycache__
+.pytest_cache
+.benchmarks
+logs
+logs_extreme
+htmlcov
+coverage.xml

@@ -1,0 +1,143 @@
+# ==============================
+# config_aug_extreme.yaml
+# Automatic Metrics for augmentation. 
+# ==============================
+
+dataset:
+  input_images_dir: "C:/Users/USER/OneDrive/Desktop/Dataset/Data/images"
+  input_labels_dir: "C:/Users/USER/OneDrive/Desktop/Dataset/Data/labels"
+  output_images_dir: "C:/Users/USER/OneDrive/Desktop/Dataset/dataset_aug_extreme/images"
+  output_labels_dir: "C:/Users/USER/OneDrive/Desktop/Dataset/dataset_aug_extreme/labels"
+  logs_dir: "logs_extreme"
+  target_total_images: 200
+
+validation:
+  min_visibility: 0.1
+  min_bbox_width: 0.01
+  min_bbox_height: 0.01
+  coord_min: 0.0
+  coord_max: 1.0
+  coord_tolerance: 0.05 
+
+quality_control:
+  black_frame_threshold: 0.90 
+  min_brightness: 5
+  max_brightness: 250  
+  target_discard_rate: 0.05  
+
+augment_passes:
+  - name: "bbox_multi_blur_shear"
+    type: "custom"
+    weight: 0.20
+    pipeline:
+      - transform: "BboxMultiBlurAndShearTransform"
+        params:
+          blur_types: ["gaussian", "motion", "median"] 
+          blur_prob: 0.85 
+          blur_strength_range: [3, 15] 
+          shear_x_range: [-80, 80] 
+          shear_y_range: [-40, 40] 
+          motion_blur_prob: 0.6
+          padding_ratio: 0.25  
+          bbox_prob: 0.85  
+          blend_edges: true
+          p: 0.85  
+
+  - name: "bbox_extreme_shear_bright_occlude"
+    type: "custom"
+    weight: 0.18
+    pipeline:
+      - transform: "BboxExtremeShearOcclude"
+        params:
+          shear_x_range: [-40, 40]  
+          shear_y_range: [-20, 20]  
+          brightness_shift: [1.3, 2.2]  
+          occlusion_intensity: "medium" 
+          occlusion_prob: 0.8  
+          padding_ratio: 0.5  
+          bbox_prob: 0.8  
+          p: 0.85  
+
+  - name: "near_bbox_extreme_bright"
+    type: "custom"
+    weight: 0.08
+    pipeline:
+      - transform: "NearBboxExtremeBrighten"
+        params:
+          radius_ratio: [0.6, 1.4]  
+          intensity_range: [1.4, 2.5]  
+          decay: "gaussian"
+          color_bias: "auto"
+          bbox_prob: 0.85  
+          p: 0.8  
+
+  - name: "concentrated_noise_center"
+    type: "custom"
+    weight: 0.10
+    pipeline:
+      - transform: "ConcentratedNoiseTransform"
+        params:
+          noise_type: "gaussian"
+          sigma_center: [25, 80]  
+          sigma_background: [5, 25]  
+          radius_scale: [0.12, 0.6]  
+          fade_profile: "gaussian"
+          bbox_prob: 0.90  
+          p: 0.85  
+
+  - name: "ball_blend_shape_bias"
+    type: "custom"
+    weight: 0.12
+    pipeline:
+      - transform: "BallBlendAndShapeBiasTransform"
+        params:
+          shape_warp_prob: 0.7  
+          warp_strength: [0.05, 0.35]  
+          blend_to_bg_prob: 0.8  
+          blend_color_mode: "ball"
+          blend_radius_ratio: [0.6, 1.2] 
+          pixel_level_mix: 0.3  
+          bbox_prob: 0.85  
+          p: 0.85 
+
+  - name: "ball_pixel_occlusion"
+    type: "custom"
+    weight: 0.12
+    pipeline:
+      - transform: "BallPixelLevelOcclusion"
+        params:
+          dropout_prob: 0.7  
+          dropout_frac: [0.02, 0.25]  
+          inpaint_smear_prob: 0.35  
+          patch_noise_prob: 0.7  
+          bbox_prob: 0.90  
+          p: 0.85  
+
+  - name: "gradient_patches_near_bbox"
+    type: "custom"
+    weight: 0.05
+    pipeline:
+      - transform: "GradientPatchTransform"
+        params:
+          patch_type: "radial"
+          max_radius_ratio: [0.8, 1.8]  
+          intensity_range: [0.6, 2.0] 
+          color_shift_scale: 0.3  
+          blend_profile: "gaussian"
+          bbox_prob: 0.85  
+          p: 0.8  
+
+  - name: "gaussian_occlude_shear"
+    type: "custom"
+    weight: 0.15
+    pipeline:
+      - transform: "BboxGaussianOccludeShearTransform"
+        params:
+          num_patches: [1, 2] 
+          intensity_range: [0.7, 1.3]  
+          shear_x_range: [-60, 60] 
+          shear_y_range: [-30, 30]  
+          color_mode: "background"
+          blur_after: true
+          bbox_prob: 0.8 
+          p: 0.85 

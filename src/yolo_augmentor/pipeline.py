@@ -7,70 +7,115 @@ Flow:
 1. Scan
 2. Convert → YOLO
 3. Repair labels
-4. Split train/val/test
-5. Augment dataset (from augment config)
+4. Augment dataset (from augment config)
+5. Split train/val/test (from augmented data)
 """
 
 import yaml
+import shutil
 from pathlib import Path
 
-from data.scan_dataset import scan_dataset
-from data.convert_to_yolo import convert_to_yolo
-from data.split_dataset import split_dataset
-from data.repair_labels import repair_labels
-from validators import validate_pipeline_config, validate_yolo_structure
+from .data.scan_dataset import scan_dataset
+from .data.convert_to_yolo import convert_to_yolo
+from .data.split_dataset import split_dataset
+from .data.repair_labels import repair_labels
+from .validators import validate_pipeline_config
 
 # Import augmentor
-from aug.augment_dataset import YOLOAugmenterV2
+from .aug.augment_dataset import YOLOAugmenterV2
 
 
 def run_pipeline(config_path: str):
-
+    """Execute the complete data preparation pipeline with automatic cleanup."""
+    
     cfg = validate_pipeline_config(config_path)
     dataset = cfg["dataset"]
     steps = cfg["steps"]
     opt = cfg.get("options", {})
+    logging_cfg = cfg.get("logging", {})
     seed = opt.get("seed", 42)
 
     input_dir = dataset["input_dir"]
     workspace = Path(dataset["workspace_dir"])
     output_dir = Path(dataset["output_dir"])
+    
+    # Ensure logging directory exists
+    if logging_cfg.get("save_logs", True):
+        log_dir = Path(logging_cfg.get("log_dir", "logs"))
+        log_dir.mkdir(parents=True, exist_ok=True)
+        print(f"[OK] Logging directory ready: {log_dir}")
 
     workspace.mkdir(exist_ok=True)
+    
+    # Track if we should cleanup workspace
+    auto_cleanup = opt.get("auto_cleanup_workspace", False)
 
-    # ------------------ 1. SCAN ------------------
-    if steps.get("scan", True):
-        print("\n[1] Scanning dataset...")
-        scan_result = scan_dataset(input_dir)
-        print(scan_result)
+    try:
+        # ------------------ 1. SCAN ------------------
+        if steps.get("scan", True):
+            print("\n[1] Scanning dataset...")
+            scan_result = scan_dataset(input_dir)
+            print(scan_result)
 
-    # ------------------ 2. CONVERT ------------------
-    if steps.get("convert_to_yolo", True):
-        print("\n[2] Converting dataset to YOLO format...")
-        convert_to_yolo(input_dir, workspace, copy=opt.get("copy_instead_of_move", True))
+        # ------------------ 2. CONVERT ------------------
+        if steps.get("convert_to_yolo", True):
+            print("\n[2] Converting dataset to YOLO format...")
+            convert_to_yolo(input_dir, workspace, copy=opt.get("copy_instead_of_move", True))
 
-    # ------------------ 3. REPAIR LABELS ------------------
-    if steps.get("repair_labels", True):
-        print("\n[3] Repairing YOLO labels...")
-        repair_labels(str(workspace / "labels"),
-                      backup=opt.get("backup_labels_before_repair", True))
+        # ------------------ 3. REPAIR LABELS ------------------
+        if steps.get("repair_labels", True):
+            print("\n[3] Repairing YOLO labels...")
+            repair_labels(str(workspace / "labels"),
+                          backup=opt.get("backup_labels_before_repair", True))
 
-    # ------------------ 4. SPLIT ------------------
-    if steps["split"]["enabled"]:
-        print("\n[4] Splitting dataset...")
-        split_dataset(str(workspace),
-                      str(workspace / "split"),
-                      steps["split"]["train"],
-                      steps["split"]["val"],
-                      steps["split"]["test"],
-                      seed)
+        # ------------------ 4. AUGMENT ------------------
+        augment_output_dir = None
+        if steps.get("augment", {}).get("enabled", False):
+            print("\n[4] Augmentation running...")
+            aug_config_path = steps["augment"]["config"]
+            
+            # Load augmentation config to get output directory
+            with open(aug_config_path, 'r', encoding='utf-8') as f:
+                aug_cfg = yaml.safe_load(f)
+            
+            augment_output_dir = Path(aug_cfg["dataset"]["output_images_dir"]).parent
+            
+            aug = YOLOAugmenterV2(aug_config_path)
+            aug.run()
+            print("[OK] Augmentation complete")
+        
+        # ------------------ 5. SPLIT ------------------
+        if steps.get("split", {}).get("enabled", False):
+            print("\n[5] Splitting dataset...")
+            
+            # Determine input directory for split
+            if augment_output_dir and augment_output_dir.exists():
+                split_input = str(augment_output_dir)
+                print(f"    Using augmented data from: {split_input}")
+            else:
+                split_input = str(workspace)
+                print(f"    Using workspace data from: {split_input}")
+            
+            # Split directly into final output directory
+            split_dataset(
+                split_input,
+                str(output_dir),
+                steps["split"]["train"],
+                steps["split"]["val"],
+                steps["split"]["test"],
+                seed,
+                copy=True
+            )
 
-    # ------------------ 5. AUGMENT ------------------
-    if steps["augment"]["enabled"]:
-        print("\n[5] Augmentation running...")
-        aug = YOLOAugmenterV2(steps["augment"]["config"])
-        aug.run()
-        print("[OK] Augmentation complete")
-
-    print("\n[OK] Pipeline Done Successfully.")
-    print(f"Output prepared at → {output_dir}\n")
+        print("\n[OK] Pipeline Done Successfully.")
+        print(f"Final dataset saved at → {output_dir}\n")
+    
+    finally:
+        # Cleanup workspace if enabled
+        if auto_cleanup and workspace.exists():
+            print(f"\n[CLEANUP] Removing workspace directory: {workspace}")
+            try:
+                shutil.rmtree(workspace)
+                print("[OK] Workspace cleaned up successfully")
+            except Exception as e:
+                print(f"[WARNING] Failed to cleanup workspace: {e}")

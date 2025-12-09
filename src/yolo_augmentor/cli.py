@@ -6,13 +6,12 @@ Extended CLI with hybrid control:
 
 import argparse
 
-from pipeline import run_pipeline
-from data.scan_dataset import scan_dataset
-from data.convert_to_yolo import convert_to_yolo
-from data.split_dataset import split_dataset
-from data.repair_labels import repair_labels
-
-from aug.augment_dataset import YOLOAugmenterV2
+from .pipeline import run_pipeline
+from .data.scan_dataset import scan_dataset
+from .data.convert_to_yolo import convert_to_yolo
+from .data.split_dataset import split_dataset
+from .data.repair_labels import repair_labels
+from .aug.augment_dataset import YOLOAugmenterV2
 
 
 def build_parser():
@@ -43,11 +42,11 @@ def build_parser():
 
     # ------------------- augment -------------------
     c = sub.add_parser("augment")
-    c.add_argument("--config", required=True)
+    c.add_argument("--config", default="../configs/config_aug.yaml", required=True)
 
     # ------------------- pipeline (full automation) -------------------
     p = sub.add_parser("pipeline")
-    p.add_argument("--config", required=True)
+    p.add_argument("--config", default="../configs/pipeine_config.yaml", required=True)
 
     return parser
 

@@ -10,7 +10,7 @@ import numpy as np
 from typing import List, Tuple, Optional
 import random
 
-from utils import radial_mask, apply_masked_blend, random_occlusion_mask
+from .utils import radial_mask, apply_masked_blend, random_occlusion_mask
 
 
 class BaseTransform:
@@ -881,7 +881,7 @@ class NearBboxExtremeBrighten(BaseTransform):
             edge_only = random.random() < self.edge_only_prob
             
             # Import the new function
-            from utils import rectangular_gradient_mask
+            from .utils import rectangular_gradient_mask
             
             # Create rectangular gradient mask
             mask = rectangular_gradient_mask(
@@ -905,7 +905,7 @@ class NearBboxExtremeBrighten(BaseTransform):
             ).astype(np.uint8)
             
             # Blend with mask
-            from utils import apply_masked_blend
+            from .utils import apply_masked_blend
             aug_image = apply_masked_blend(aug_image, bright, mask, alpha=1.0)
         
         return aug_image, bboxes, labels
@@ -1080,7 +1080,7 @@ class GradientPatchTransform(BaseTransform):
             edge_only = random.random() < self.directional_prob
             
             # Import the new function
-            from utils import rectangular_gradient_mask, apply_masked_blend
+            from .utils import rectangular_gradient_mask, apply_masked_blend
             
             # Create mask
             mask = rectangular_gradient_mask(

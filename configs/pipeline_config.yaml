@@ -1,0 +1,37 @@
+# ===========================================================
+# YOLO-FORGE Pipeline Configuration
+# End-to-end automation: Scan → Convert → Repair → Augment → Split
+# ===========================================================
+
+dataset:
+  input_dir: "C:/Users/USER/OneDrive/Desktop/Dataset/Data"                 # raw dataset (messy or mixed)
+  workspace_dir: "workspace"            # internal working directory
+  output_dir: "C:/Users/USER/OneDrive/Desktop/Dataset/final_dataset"           # final clean dataset output
+
+steps:
+  scan: true
+  convert_to_yolo: true                 # if dataset is not YOLO structured
+  repair_labels: true                   # cleans invalid labels
+  augment:
+    enabled: true
+    config: "configs/config_aug_extreme.yaml"
+  split:
+    enabled: true
+    train: 0.8
+    val: 0.1
+    test: 0.1
+
+options:
+  copy_instead_of_move: true            # safe mode
+  backup_labels_before_repair: true     # keeps .bak files
+  auto_cleanup_workspace: true          # delete workspace after completion
+  seed: 42
+
+qc:                                      # quality check module (future-extendable)
+  enable_basic_qc: true
+  min_resolution: [320, 320]             # warn if below
+  allow_missing_labels: false            # stop or warn
+
+logging:
+  save_logs: true
+  log_dir: "logs"
