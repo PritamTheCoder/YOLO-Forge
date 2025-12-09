@@ -14,12 +14,14 @@ Flow:
 import yaml
 import shutil
 from pathlib import Path
+import logging
 
 from .data.scan_dataset import scan_dataset
 from .data.convert_to_yolo import convert_to_yolo
 from .data.split_dataset import split_dataset
 from .data.repair_labels import repair_labels
 from .validators import validate_pipeline_config
+from .reports.report_generator import generate_report
 
 # Import augmentor
 from .aug.augment_dataset import YOLOAugmenterV2
@@ -106,9 +108,32 @@ def run_pipeline(config_path: str):
                 seed,
                 copy=True
             )
-
+            print("[OK] Dataset split successful")
+        
+        # --------------------- 6. FINAL REPORT ---------------------
+        print("\n[6]Generating final dataset report...")
+        
+        report_save_dir = Path(output_dir) / "report"
+        report_save_dir.mkdir(parents=True, exist_ok=True)
+        
+        report = generate_report(
+            yolo_root=str(output_dir/"train"),
+            out_dir=str(report_save_dir),
+            samples=30,
+        )
+        
+        print("\n Report generated sucessfully!")
+        print("\n Dataset Processing Completed!")
+        print("Report Summary:")
+        print(f"  -> HTML Report: {report['html']}")
+        print(f"  -> Stats JSON: {report['stats_json']}\n")
+        print(f"   - Output Folder: {report['report_dir']}")
+        print(f"   - Plots: {len(report['plots'])}")
+        print(f"   - Sample Tiles: {len(report['sample_images'])}")
+        
+        # =============== PIPELINE COMPLETED ==========================
         print("\n[OK] Pipeline Done Successfully.")
-        print(f"Final dataset saved at → {output_dir}\n")
+        print(f"Final dataset ready at → {output_dir}\n")
     
     finally:
         # Cleanup workspace if enabled

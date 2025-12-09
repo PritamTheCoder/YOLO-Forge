@@ -43,11 +43,23 @@ def build_parser():
     # ------------------- augment -------------------
     c = sub.add_parser("augment")
     c.add_argument("--config", default="../configs/config_aug.yaml", required=True)
+    
+    # --------------------report ---------------------
+    r = sub.add_parser("report")
+    r.add_argument("--dataset", required=True)
+    r.add_argument("--out", default="reports/last_run")
+    r.add_argument("--samples", type=int, default=24)
 
     # ------------------- pipeline (full automation) -------------------
     p = sub.add_parser("pipeline")
     p.add_argument("--config", default="../configs/pipeine_config.yaml", required=True)
 
+    # ------------------- convert-coco entry (standalone tool) -----------
+    c = sub.add_parser("convert-coco")
+    c.add_argument("--json", required=True)
+    c.add_argument("--images_root", required=True)
+    c.add_argument("--out", required=True)
+    
     return parser
 
 
@@ -68,10 +80,20 @@ def main():
 
     elif args.command == "augment":
         YOLOAugmenterV2(args.config).run()
+    
+    elif args.command == "report":
+        from .reports.report_generator import generate_report
+        res = generate_report(args.dataset, out_dir=args.out, samples=args.samples)
+        print("Report generated:", res["html"])
 
     elif args.command == "pipeline":
         run_pipeline(args.config)
 
+    elif args.command == "convert-coco":
+        from .data.coco_to_yolo import convert_coco_to_yolo
+        summary = convert_coco_to_yolo(args.json, args.images_root, args.out, copy_images=True)
+        print("COCO->YOLO summary:", summary)
+    
     else:
         print("\nUse one of the following:")
         print(" scan | convert | split | repair | augment | pipeline\n")
