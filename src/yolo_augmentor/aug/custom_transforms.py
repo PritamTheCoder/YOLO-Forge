@@ -706,8 +706,8 @@ class BboxMultiBlurAndShearTransform(BaseTransform):
             a, b = b, a
         self.blur_strength_range = (max(1, a), max(1, b))
 
-        self.shear_x_range = params.get('shear_x_range', (-80, 80))
-        self.shear_y_range = params.get('shear_y_range', (-40, 40))
+        self.shear_x_range = params.get('shear_x_range', (-12, 12))
+        self.shear_y_range = params.get('shear_y_range', (-8, 8))
 
     def apply(self, image, bboxes, labels):
         img_h, img_w = image.shape[:2]
@@ -748,8 +748,13 @@ class BboxMultiBlurAndShearTransform(BaseTransform):
             # Shear
             sx = random.uniform(*self.shear_x_range)
             sy = random.uniform(*self.shear_y_range)
-            M = np.float32([[1, np.tan(np.radians(sx)) / 50, 0],
-                            [np.tan(np.radians(sy)) / 50, 1, 0]])
+            h = crop.shape[0]
+            scale = h/ 50.0
+            
+            sx_factor = np.tan(np.radians(sx)) * scale
+            sy_factor = np.tan(np.radians(sy)) * scale
+            
+            M = np.float32([[1, sx_factor, 0], [sy_factor, 1, 0]])
             crop = cv2.warpAffine(crop, M, (crop.shape[1], crop.shape[0]),
                                   borderMode=cv2.BORDER_REFLECT)
             image[y1:y2, x1:x2] = crop
@@ -764,8 +769,8 @@ class BboxExtremeShearOcclude(BaseTransform):
     def __init__(self, **params):
         bbox_prob = params.get('bbox_prob', 1.0)
         super().__init__(bbox_prob=bbox_prob)
-        self.shear_x_range = params.get('shear_x_range', (-100, 100))
-        self.shear_y_range = params.get('shear_y_range', (-60, 60))
+        self.shear_x_range = params.get('shear_x_range', (-12, 12))
+        self.shear_y_range = params.get('shear_y_range', (-8, 8))
         self.brightness_shift = params.get('brightness_shift', (1.5, 2.5))
         self.occlusion_intensity = params.get('occlusion_intensity', 'medium')
 
@@ -784,8 +789,14 @@ class BboxExtremeShearOcclude(BaseTransform):
                 continue
 
             sx, sy = random.uniform(*self.shear_x_range), random.uniform(*self.shear_y_range)
-            M = np.float32([[1, np.tan(np.radians(sx)) / 50, 0],
-                            [np.tan(np.radians(sy)) / 50, 1, 0]])
+            h = crop.shape[0]
+            baseline = 50.0
+            scale = min(h / baseline, 1.5)   # limits runaway distortion
+            sx_factor = np.tan(np.radians(sx)) * scale * 0.25
+            sy_factor = np.tan(np.radians(sy)) * scale * 0.25
+            
+            M = np.float32([[1, sx_factor, 0],[sy_factor, 1, 0]])
+            
             crop = cv2.warpAffine(crop, M, (crop.shape[1], crop.shape[0]),
                                   borderMode=cv2.BORDER_REFLECT)
 
@@ -945,35 +956,82 @@ class ConcentratedNoiseTransform(BaseTransform):
 # BallBlendAndShapeBiasTransform
 # ============================================================
 class BallBlendAndShapeBiasTransform(BaseTransform):
-    """Shape warp and color blending with background."""
+    """Perspective warp + background color blending for realistic ball distortion."""
     def __init__(self, **params):
         bbox_prob = params.get('bbox_prob', 1.0)
         super().__init__(bbox_prob=bbox_prob)
-        self.warp_strength = params.get('warp_strength', (0.05, 0.25))
+
+        # Recommended stronger range for visible warping
+        self.warp_strength = params.get('warp_strength', (0.1, 0.35))
 
     def apply(self, image, bboxes, labels):
         img_h, img_w = image.shape[:2]
+
+        # background color for blending (slight bias effect)
         bg_color = np.mean(image, axis=(0, 1)).astype(np.uint8)
+
         for box in bboxes:
             if random.random() > self.bbox_prob:
                 continue
+
+            # Convert YOLO bbox to pixel coords
             x1, y1, x2, y2 = self.yolo_to_pixels(box, (img_h, img_w))
             x1, y1, x2, y2 = self.clip_bbox_to_image(x1, y1, x2, y2, (img_h, img_w))
             if x2 <= x1 or y2 <= y1:
                 continue
+
             crop = image[y1:y2, x1:x2].copy()
             if crop.size == 0:
                 continue
-            fx = 1 + random.uniform(*self.warp_strength) * random.choice([-1, 1])
-            fy = 1 + random.uniform(*self.warp_strength) * random.choice([-1, 1])
-            # compute intermediate resize safely
-            new_w = max(1, int(round(crop.shape[1] * fx)))
-            new_h = max(1, int(round(crop.shape[0] * fy)))
-            warped = cv2.resize(crop, (new_w, new_h))
-            warped = cv2.resize(warped, (x2 - x1, y2 - y1))
-            blend = cv2.addWeighted(warped, 0.7, np.full_like(warped, bg_color, dtype=np.uint8), 0.3, 0)
+
+            h, w = crop.shape[:2]
+
+            # -----------------------------
+            #      PERSPECTIVE WARP
+            # -----------------------------
+            strength = random.uniform(*self.warp_strength)
+
+            # random tilt direction
+            direction = random.choice([-1, 1])
+
+            dx = strength * w * 0.5 * direction   # horizontal skew
+            dy = strength * h * 0.5 * direction   # vertical skew
+
+            src = np.float32([
+                [0,   0],
+                [w-1, 0],
+                [0,   h-1],
+                [w-1, h-1]
+            ])
+
+            dst = np.float32([
+                [0 + dx,      0 + dy],
+                [w-1 - dx,    0 + dy],
+                [0 + dx,      h-1 - dy],
+                [w-1 - dx,    h-1 - dy],
+            ])
+
+            # Perspective transform matrix
+            M = cv2.getPerspectiveTransform(src, dst)
+
+            # Apply perspective warp
+            warped = cv2.warpPerspective(
+                crop, M, (w, h), borderMode=cv2.BORDER_REFLECT
+            )
+
+            # -----------------------------
+            #      BLENDING WITH BG
+            # -----------------------------
+            blend = cv2.addWeighted(
+                warped, 0.75,
+                np.full_like(warped, bg_color), 0.25,
+                0
+            )
+
             image[y1:y2, x1:x2] = blend
+
         return image, bboxes, labels
+
 
 
 # ============================================================
