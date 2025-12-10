@@ -18,14 +18,6 @@ It modifies regions *inside and around* the object to simulate motion, occlusion
 
 YOLO-Forge automates the "messy" side of computer vision data prep through a strictly typed, sequential pipeline:
 
-```mermaid
-    A[Scan] --> B[Convert]
-    B --> C[Repair]
-    C --> D[Augment]
-    D --> E[Split]
-    E --> F[Report]
-```
-
 | Stage | Description |
 | :--- | :--- |
 | **1. Scan** | Validates directory structure, detects missing labels, and reports initial dataset health. |
