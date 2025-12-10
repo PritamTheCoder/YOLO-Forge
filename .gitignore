@@ -1,7 +1,5 @@
-tests/
 .venv
 pytest.ini
-requirements-test.txt
 examples
 __pycache__
 .pytest_cache
