@@ -106,7 +106,7 @@ class YOLOAugmenterV2:
     def _setup_logging(self):
         """Setup comprehensive logging for debugging."""
         log_dir = Path(self.config['dataset'].get('logs_dir', 'logs'))
-        log_dir.mkdir(exist_ok=True)
+        log_dir.mkdir(parents=True, exist_ok=True)
         log_file = log_dir / f"augmentation_{datetime.now():%Y%m%d_%H%M%S}.log"
         
         logging.basicConfig(

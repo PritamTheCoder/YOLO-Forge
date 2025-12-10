@@ -11,3 +11,4 @@ logs_extreme
 htmlcov
 coverage.xml
 Makefile
+.coverage

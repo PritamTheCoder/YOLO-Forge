@@ -36,8 +36,12 @@ def _clean_line(line: str):
     x, y = max(0, min(1, x)), max(0, min(1, y))
     w, h = max(0, min(1, w)), max(0, min(1, h))
 
-    # invalid bounding boxes
-    if w <= 0 or h <= 0:
+    # Coordinates must be strictly inside (0,1)
+    if not (0 < x < 1 and 0 < y < 1):
+        return None
+
+    # width/height must be positive AND ensure box doesn't exceed bounds
+    if not (0 < w < 1 and 0 < h < 1):
         return None
 
     return cls, x, y, w, h
