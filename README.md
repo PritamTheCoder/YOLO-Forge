@@ -6,7 +6,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Commit Activity](https://img.shields.io/github/commit-activity/m/pritamthecoder/yolo-forge)](https://github.com/pritamthecoder/yolo-forge/graphs/commit-activity)
 
-
 **End-to-End Dataset Engineering, Augmentation & Automation for Object Detection**
 
 YOLO-Forge is a production-ready dataset pipeline designed for training robust object detection models (YOLOv5/v8/v11). Unlike standard augmentation libraries that process global frames, YOLO-Forge features a **Bbox-Aware Engine** optimized for small-object tracking, drone surveillance, and industrial vision.
