@@ -1,0 +1,24 @@
+name: Update Docker Hub Description
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'README.md' # Only runs when README changes
+
+jobs:
+  update-docker-hub-doc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Docker Hub Description
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: aurelian1111/yolo-forge
+          short-description: "End-to-End Dataset Engineering & Augmentation for YOLO Object Detection"
+          readme-filepath: ./README.md
