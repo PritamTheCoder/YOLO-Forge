@@ -2,7 +2,6 @@ tests/
 .venv
 pytest.ini
 requirements-test.txt
-docker
 examples
 __pycache__
 .pytest_cache
@@ -11,5 +10,4 @@ logs
 logs_extreme
 htmlcov
 coverage.xml
-.github
 Makefile
