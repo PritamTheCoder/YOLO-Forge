@@ -4,9 +4,9 @@
 # ===========================================================
 
 dataset:
-  input_dir: "C:/Users/USER/OneDrive/Desktop/Dataset/Data"                 # raw dataset (messy or mixed)
+  input_dir: "/data"                 # raw dataset (messy or mixed)
   workspace_dir: "workspace"            # internal working directory
-  output_dir: "C:/Users/USER/OneDrive/Desktop/Dataset/final_dataset"           # final clean dataset output
+  output_dir: "/output"           # final clean dataset output
 
 steps:
   scan: true

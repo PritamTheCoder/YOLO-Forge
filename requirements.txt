@@ -3,3 +3,4 @@ numpy
 pyyaml 
 tqdm 
 albumentations
+matplotlib

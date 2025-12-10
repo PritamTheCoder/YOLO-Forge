@@ -11,3 +11,5 @@ logs
 logs_extreme
 htmlcov
 coverage.xml
+.github
+Makefile

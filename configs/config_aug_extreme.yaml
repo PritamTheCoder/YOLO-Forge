@@ -4,11 +4,11 @@
 # ==============================
 
 dataset:
-  input_images_dir: "C:/Users/USER/OneDrive/Desktop/Dataset/Data/images"
-  input_labels_dir: "C:/Users/USER/OneDrive/Desktop/Dataset/Data/labels"
-  output_images_dir: "C:/Users/USER/OneDrive/Desktop/Dataset/dataset_aug_extreme/images"
-  output_labels_dir: "C:/Users/USER/OneDrive/Desktop/Dataset/dataset_aug_extreme/labels"
-  logs_dir: "logs_extreme"
+  input_images_dir: "/data/images"
+  input_labels_dir: "/data/labels"
+  output_images_dir: "/output/train/images"
+  output_labels_dir: "/output/train/labels"
+  logs_dir: "/output/logs_extreme"
   target_total_images: 200
 
 validation:

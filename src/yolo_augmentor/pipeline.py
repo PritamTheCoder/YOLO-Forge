@@ -1,5 +1,5 @@
 """
-pipeline.py
+pipeline.py 
 -----------
 Automated end-to-end pipeline for dataset preparation.
 
@@ -7,8 +7,8 @@ Flow:
 1. Scan
 2. Convert → YOLO
 3. Repair labels
-4. Augment dataset (from augment config)
-5. Split train/val/test (from augmented data)
+4. Augment dataset (to TEMP location)
+5. Split train/val/test (from augmented TEMP data to final output)
 """
 
 import yaml
@@ -80,7 +80,35 @@ def run_pipeline(config_path: str):
             with open(aug_config_path, 'r', encoding='utf-8') as f:
                 aug_cfg = yaml.safe_load(f)
             
+            # CRITICAL FIX: Get the augmentation output directory
             augment_output_dir = Path(aug_cfg["dataset"]["output_images_dir"]).parent
+            
+            # Check if augmentation output conflicts with final split output
+            if augment_output_dir.resolve() == output_dir.resolve() or \
+               augment_output_dir.resolve() in [output_dir.resolve() / split_name 
+                                                for split_name in ['train', 'val', 'test']]:
+                print("\n[WARNING] Augmentation output directory conflicts with split output!")
+                print(f"  Augment output: {augment_output_dir}")
+                print(f"  Final output: {output_dir}")
+                print("  Creating temporary augmentation directory...")
+                
+                # Use a temp directory inside workspace
+                temp_aug_dir = workspace / "augmented_temp"
+                temp_aug_dir.mkdir(exist_ok=True)
+                
+                # Modify augmentation config temporarily
+                aug_cfg["dataset"]["output_images_dir"] = str(temp_aug_dir / "images")
+                aug_cfg["dataset"]["output_labels_dir"] = str(temp_aug_dir / "labels")
+                
+                # Save modified config to temporary file
+                temp_config_path = workspace / "temp_aug_config.yaml"
+                with open(temp_config_path, 'w', encoding='utf-8') as f:
+                    yaml.safe_dump(aug_cfg, f)
+                
+                # Use temporary config
+                aug_config_path = str(temp_config_path)
+                augment_output_dir = temp_aug_dir
+                print(f"  Using temporary augmentation directory: {augment_output_dir}")
             
             aug = YOLOAugmenterV2(aug_config_path)
             aug.run()
@@ -98,7 +126,18 @@ def run_pipeline(config_path: str):
                 split_input = str(workspace)
                 print(f"    Using workspace data from: {split_input}")
             
-            # Split directly into final output directory
+            # Verify split input is different from output
+            split_input_resolved = Path(split_input).resolve()
+            output_dir_resolved = output_dir.resolve()
+            
+            if split_input_resolved == output_dir_resolved or \
+               split_input_resolved in [output_dir_resolved / name for name in ['train', 'val', 'test']]:
+                raise ValueError(
+                    f"Split input ({split_input}) cannot be the same as or inside output directory ({output_dir}). "
+                    f"This would cause files to be copied to themselves!"
+                )
+            
+            # Split into final output directory
             split_dataset(
                 split_input,
                 str(output_dir),
@@ -111,7 +150,7 @@ def run_pipeline(config_path: str):
             print("[OK] Dataset split successful")
         
         # --------------------- 6. FINAL REPORT ---------------------
-        print("\n[6]Generating final dataset report...")
+        print("\n[6] Generating final dataset report...")
         
         report_save_dir = Path(output_dir) / "report"
         report_save_dir.mkdir(parents=True, exist_ok=True)
@@ -122,7 +161,7 @@ def run_pipeline(config_path: str):
             samples=30,
         )
         
-        print("\n Report generated sucessfully!")
+        print("\n Report generated successfully!")
         print("\n Dataset Processing Completed!")
         print("Report Summary:")
         print(f"  -> HTML Report: {report['html']}")
@@ -130,7 +169,7 @@ def run_pipeline(config_path: str):
         print(f"   - Output Folder: {report['report_dir']}")
         print(f"   - Plots: {len(report['plots'])}")
         print(f"   - Sample Tiles: {len(report['sample_images'])}")
-        
+          
         # =============== PIPELINE COMPLETED ==========================
         print("\n[OK] Pipeline Done Successfully.")
         print(f"Final dataset ready at → {output_dir}\n")

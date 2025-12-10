@@ -119,7 +119,7 @@ class YOLOAugmenterV2:
         )
         self.logger = logging.getLogger(__name__)
         self.logger.info("=" * 80)
-        self.logger.info("YOLO Dataset Augmentation System - FIXED VERSION")
+        self.logger.info("YOLO Dataset Augmentation System")
         self.logger.info("=" * 80)
 
     def _validate_config(self):

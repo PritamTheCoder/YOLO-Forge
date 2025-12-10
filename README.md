@@ -1,121 +1,134 @@
-# YOLO-Forge: Advanced Dataset Augmentation & Pipeline Tool
+# YOLO-Forge
 
-**YOLO-Forge** is a production-grade, end-to-end dataset engineering pipeline designed specifically for training robust object detection models. While it handles standard dataset preparation tasks (conversion, splitting, repair), its core strength lies in its **specialized augmentation engine**.
+[](https://www.python.org/downloads/release/python-380/)
+[](https://www.google.com/search?q=https://hub.docker.com/r/aurelian1111/yolo-forge)
+[](https://opensource.org/licenses/MIT)
+[](https://www.google.com/search?q=https://github.com/yourusername/yolo-forge/graphs/commit-activity)
 
-Designed for high-velocity, small-object scenarios (e.g., sports ball tracking, drone surveillance, industrial inspection), YOLO-Forge applies augmentations **locally** (within/around bounding boxes) rather than globally. This preserves background context while generating difficult training samples that simulate motion blur, extreme lighting, occlusion, and shape deformation.
+**End-to-End Dataset Engineering, Augmentation & Automation for Object Detection**
 
------
+YOLO-Forge is a production-ready dataset pipeline designed for training robust object detection models (YOLOv5/v8/v11). Unlike standard augmentation libraries that process global frames, YOLO-Forge features a **Bbox-Aware Engine** optimized for small-object tracking, drone surveillance, and industrial vision.
 
-## 🚀 Key Capabilities
-
-### 1\. Specialized Augmentation Engine
-
-Unlike standard libraries (Albumentations, imgaug) that apply transforms to the entire image, YOLO-Forge includes a custom registry of **Bbox-Aware Transforms**. These target the object of interest specifically:
-
-  * **Motion Simulation:** Directional motion blur and shear based on object trajectory.
-  * **Occlusion Modeling:** Geometric, organic, and pixel-level occlusions to simulate partial visibility.
-  * **Lighting & Environment:** Localized brightness, glare (halo effects), and shadow injection.
-  * **Adversarial Noise:** Concentrated Gaussian noise and texture degradation on the object itself.
-
-### 2\. End-to-End Automation
-
-A single command runs the entire lifecycle:
-
-1.  **Scan:** Audits dataset health (missing labels, corrupt images).
-2.  **Convert:** Normalizes directory structures (flat/nested) to standard YOLO format.
-3.  **Repair:** Fixes malformed label files, clips coordinates to `[0,1]`, and removes empty annotations.
-4.  **Augment:** Generates synthetic data based on configurable weights and pipelines.
-5.  **Split:** Stratified random split into Train/Val/Test sets.
-
-### 3\. Quality Control (QC)
-
-Built-in safety rails prevent "garbage-in, garbage-out":
-
-  * **Black Frame Detection:** Automatically discards augmented images that are too dark/empty.
-  * **Bbox Validation:** Rejects invalid geometries (negative areas, out-of-bounds).
-  * **Logging:** Comprehensive audit logs for every image generated or discarded.
+It modifies regions *inside and around* the object to simulate motion, occlusion, and sensor noise without destroying background context.
 
 -----
 
-## 🛠️ Installation
+## 🏗️ Architecture & Workflow
 
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/yolo-forge.git
-cd yolo-forge
+YOLO-Forge automates the "messy" side of computer vision data prep through a strictly typed, sequential pipeline:
 
-# Install dependencies
-pip install -r requirements.txt
+```mermaid
+    A[Scan] --> B[Convert]
+    B --> C[Repair]
+    C --> D[Augment]
+    D --> E[Split]
+    E --> F[Report]
 ```
 
-*Requires: `numpy`, `opencv-python`, `PyYAML`, `albumentations`, `tqdm`*
+| Stage | Description |
+| :--- | :--- |
+| **1. Scan** | Validates directory structure, detects missing labels, and reports initial dataset health. |
+| **2. Convert** | Normalizes diverse input formats (nested folders, flat files) into standard YOLO structure. |
+| **3. Repair** | Fixes invalid labels, normalizes coordinates to `[0,1]`, and removes broken/corrupt files. |
+| **4. Augment** | **(Core)** Generates synthetic samples using motion, glare, occlusion, and warping. |
+| **5. Split** | Automatically splits data into Train/Val/Test sets based on configurable ratios. |
+| **6. Report** | Generates HTML reports, class distribution histograms, and health metrics. |
 
 -----
 
 ## ⚡ Quick Start
 
-### 1\. The "All-in-One" Pipeline
+### Option A: Docker (Recommended)
 
-The most efficient way to use YOLO-Forge is via the pipeline command, which reads a master config file.
+*Best for production consistency. No environment setup required.*
+
+**1. Pull the Image**
 
 ```bash
+docker pull aurelian1111/yolo-forge:latest
+```
+
+**2. Run the Pipeline**
+Ensure your data resides in a folder (e.g., `data/`) containing `images/` and `labels/`.
+
+**Linux / MacOS:**
+
+```bash
+docker run --rm -it \
+  -v $(pwd)/data:/data \
+  -v $(pwd)/output:/output \
+  aurelian1111/yolo-forge:latest \
+  pipeline --config configs/pipeline_config.yaml
+```
+
+**Windows (PowerShell):**
+
+```powershell
+docker run --rm -it `
+  -v "C:\path\to\dataset:/data" `
+  -v "C:\path\to\output:/output" `
+  aurelian1111/yolo-forge:latest `
+  pipeline --config configs/pipeline_config.yaml
+```
+
+### Option B: Local Installation
+
+*Best for development and debugging.*
+
+```bash
+# Clone and Install
+git clone https://github.com/YOUR-USERNAME/yolo-forge.git
+cd yolo-forge
+pip install -r requirements.txt
+
+# Run Pipeline
 python -m src.yolo_augmentor.cli pipeline --config configs/pipeline_config.yaml
-```
-
-### 2\. Individual Modules
-
-You can also run specific utilities independently:
-
-**Scan a dataset for errors:**
-
-```bash
-python -m src.yolo_augmentor.cli scan --path /path/to/raw_data
-```
-
-**Convert nested folders to YOLO format:**
-
-```bash
-python -m src.yolo_augmentor.cli convert --input /raw/data --output /clean/data
-```
-
-**Augment an existing dataset:**
-
-```bash
-python -m src.yolo_augmentor.cli augment --config configs/config_aug_extreme.yaml
 ```
 
 -----
 
-## 🎨 Augmentation Registry
+## 🎨 Bbox-Aware Augmentation Engine
 
-YOLO-Forge features **8+ Custom Bbox-Oriented Augmentations** alongside standard global transforms.
+YOLO-Forge specializes in difficult vision scenarios. It includes **8+ custom augmentation modules** that target the bounding box area specifically.
 
-| Transform Name | Description | Target Use Case |
+| Transform | Effect | Use Case |
 | :--- | :--- | :--- |
-| **`BboxMultiBlurAndShear`** | Applies diverse blur kernels (Gaussian, Motion) and shearing *only* to the object. | Fast-moving objects (balls, drones). |
-| **`BboxExtremeShearOcclude`** | Aggressive geometric deformation + partial blocking. | Objects undergoing rapid direction changes. |
-| **`NearBboxExtremeBrighten`** | Adds a bright "halo" or glare *around* the object, washing out edges. | Outdoor sports, sun glare, stadium lights. |
-| **`ConcentratedNoiseTransform`** | Injects high-frequency noise centered on the object, fading radially. | Low-light sensors, ISO grain simulation. |
-| **`BallBlendAndShapeBias`** | Subtle warping and alpha-blending with background colors. | Camouflage, objects blending into texture. |
-| **`BallPixelLevelOcclusion`** | Random pixel dropouts (salt-and-pepper) inside the bbox. | Sensor dust, dead pixels, transmission errors. |
-| **`GradientPatchTransform`** | Smooth directional lighting gradients over the object area. | Dynamic shadows and uneven lighting. |
-| **`BboxGaussianOccludeShear`** | Soft, fog-like occlusion patches overlaid on the object. | Atmospheric interference (fog, smoke). |
+| **Multi-Blur + Shear** | Motion simulation | Fast moving objects (soccer balls, drones). |
+| **Occlusion Warp** | Object blocking & distortion | Objects moving behind trees/poles. |
+| **Bright Halo Boost** | Lens glare simulation | Stadium lights, sun glare. |
+| **Concentrated Noise** | Low-light sensor simulation | Nighttime surveillance, ISO grain. |
+| **Pixel-drop Occlusion** | Transmission artifacts | Dead pixels, signal interference. |
+| **Gaussian Fog Patch** | Weather interference | Fog, smoke, steam. |
+| **Shape Bias + Blending** | Texture camouflage | Objects blending into complex backgrounds. |
+| **Gradient Center Patch** | Light gradients | Dynamic shadows. |
 
-### Configuration Example (`config_aug.yaml`)
+-----
 
-Control the intensity and probability of every transform:
+## 🛠️ Standalone Tools
 
-```yaml
-augment_passes:
-  - name: "motion_blur_pass"
-    type: "custom"
-    weight: 0.3
-    pipeline:
-      - transform: "BboxMultiBlurAndShearTransform"
-        params:
-          blur_types: ["motion"]
-          shear_x_range: [-30, 30]
-          bbox_prob: 0.9
+YOLO-Forge exposes individual modules for specific tasks without running the full pipeline.
+
+### COCO → YOLO Converter
+
+Convert COCO JSON annotations to YOLO `.txt` format instantly.
+
+```bash
+python -m src.tools.coco2yolo \
+  --json annotations.json \
+  --img_dir path/to/images \
+  --output labels_yolo/
+```
+
+### Manual Scan & Repair
+
+Audit a dataset without altering it, or run a repair pass to fix coordinate errors.
+
+```bash
+# Scan only
+python -m src.yolo_augmentor.cli scan --path /data/dataset
+
+# Repair labels
+python -m src.yolo_augmentor.cli repair --input /data/raw --output /data/clean
 ```
 
 -----
@@ -124,14 +137,19 @@ augment_passes:
 
 ### Pipeline Config (`pipeline_config.yaml`)
 
-Controls the workflow steps.
+Controls which steps of the lifecycle are active.
 
 ```yaml
+dataset:
+  input_dir: "/data"       # Mapped to container volume
+  output_dir: "/output"    # Results location
+  workspace_dir: "workspace"
+
 steps:
   scan: true
   convert_to_yolo: true
   repair_labels: true
-  augment: 
+  augment:
     enabled: true
     config: "configs/config_aug_extreme.yaml"
   split:
@@ -139,47 +157,80 @@ steps:
     train: 0.8
     val: 0.1
     test: 0.1
+  report:
+    enabled: true
+    samples: 30
 ```
 
-### Augmentation Config (`config_aug.yaml`)
+### Augmentation Profile (`config_aug_extreme.yaml`)
 
-Controls generation logic.
+Controls the intensity of synthetic generation.
 
-  * **`target_total_images`**: The total desired dataset size. The system calculates necessary multipliers automatically.
-  * **`quality_control`**: Thresholds for discarding "bad" augmentations (e.g., `black_frame_threshold: 0.90`).
-  * **`augment_passes`**: A list of augmentation strategies. You can mix "custom" (YOLO-Forge specific) and "standard" (Albumentations) passes.
+```yaml
+dataset:
+  # Note: Paths must match container paths if using Docker
+  input_images_dir: "/data/images"
+  input_labels_dir: "/data/labels"
+  output_images_dir: "/output/aug/images"
+  output_labels_dir: "/output/aug/labels"
+  
+  # Target size of the final dataset
+  target_total_images: 200
+
+quality_control:
+  black_frame_threshold: 0.90 # Discard images that become too dark
+```
 
 -----
 
-## 📊 Directory Structure
+## 📊 Outputs & Reporting
 
-The system enforces a standard YOLO layout for compatibility with YOLOv5/v8/v10/v11.
-
-**Input (Raw):**
-Can be messy, nested, or flat. The `convert` step standardizes this.
-
-**Output (Processed):**
+The system ensures a strictly organized output directory ready for training.
 
 ```text
-final_dataset/
-├── train/
+output/
+├── train/              # Ready for YOLO training
 │   ├── images/
 │   └── labels/
 ├── val/
-│   ├── images/
-│   └── labels/
-└── test/
-    ├── images/
-    └── labels/
+├── test/
+└── report/
+    ├── index.html               <-- Interactive Dataset Report
+    ├── summary.json             <-- Machine readable metrics
+    ├── class_distribution.png
+    ├── bbox_hist.png            <-- Area/Ratio analysis
+    └── instances_per_class.png
+```
+
+**The HTML Report includes:**
+
+  * Class balance visualization.
+  * Bounding box aspect ratio & area histograms (crucial for anchor box tuning).
+  * Visual grid of augmented samples.
+  * Dataset health metrics.
+
+-----
+
+## 👨‍💻 Development
+
+To build the Docker image locally:
+
+```bash
+docker build -t yolo-forge .
+```
+
+To run the CLI help menu:
+
+```bash
+python -m src.yolo_augmentor.cli --help
 ```
 
 -----
 
 ## 🛡️ License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License. Free for commercial and research use.
+
+> *"Forge your data like steel. The harsher the training, the stronger the model."*
 
 -----
-
-**Developed for high-precision Computer Vision engineering.**
-*Generate difficult data today, train robust models tomorrow.*
