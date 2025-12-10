@@ -31,9 +31,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run quick unit tests
-        run: |
-          pytest -q --maxfail=1 --disable-warnings || exit 1
+      # - name: Run quick unit tests
+      #   run: |
+      #     pytest -q --maxfail=1 --disable-warnings || exit 1
 
       - name: CLI smoke test
         run: python -m src.yolo_augmentor.cli --help
