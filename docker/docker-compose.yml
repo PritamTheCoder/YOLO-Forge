@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  yolo-forge:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: yolo-forge:local
+    volumes:
+      - ../configs:/app/configs:ro
+      - ../src:/app/src:ro
+      - ../data:/data:rw
+      - ../output:/output:rw
+    environment:
+      - PYTHONUNBUFFERED=1
+    entrypoint: ["/app/run.sh"]
+    command: ["pipeline", "--config", "configs/pipeline_config.yaml"]
