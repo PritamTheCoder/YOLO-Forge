@@ -1,9 +1,11 @@
 # YOLO-Forge
 
-[](https://www.python.org/downloads/release/python-380/)
-[](https://www.google.com/search?q=https://hub.docker.com/r/aurelian1111/yolo-forge)
-[](https://opensource.org/licenses/MIT)
-[](https://www.google.com/search?q=https://github.com/yourusername/yolo-forge/graphs/commit-activity)
+![Python Version](https://img.shields.io/badge/Python-3.8+-blue.svg)
+[![Docker Pulls](https://img.shields.io/docker/pulls/aurelian1111/yolo-forge)](https://hub.docker.com/r/aurelian1111/yolo-forge)
+![Docker Image Size](https://img.shields.io/docker/image-size/aurelian1111/yolo-forge/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Commit Activity](https://img.shields.io/github/commit-activity/m/pritamthecoder/yolo-forge)](https://github.com/pritamthecoder/yolo-forge/graphs/commit-activity)
+
 
 **End-to-End Dataset Engineering, Augmentation & Automation for Object Detection**
 
@@ -232,5 +234,7 @@ python -m src.yolo_augmentor.cli --help
 MIT License. Free for commercial and research use.
 
 > *"Forge your data like steel. The harsher the training, the stronger the model."*
+
+By - **PritamTheCoder** | **Pritam Thapa**
 
 -----
